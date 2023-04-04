@@ -216,4 +216,153 @@
 (cffi:defcfun (server-info-clear "opus_server_info_clear") :void
   (server-info :pointer))
 
+(cffi:defcfun (fopen "op_fopen") :pointer
+  (callbacks :pointer)
+  (path :string)
+  (mode :pointer))
 
+(cffi:defcfun (fdopen "op_fdopen") :pointer
+  (callbacks :pointer)
+  (fd :int)
+  (mode :pointer))
+
+(cffi:defcfun (freopen "op_freopen") :pointer
+  (callbacks :pointer)
+  (path :string)
+  (mode :pointer)
+  (stream :pointer))
+
+(cffi:defcfun (mem-stream-create "op_mem_stream_create") :pointer
+  (callbacks :pointer)
+  (data :pointer)
+  (size :size))
+
+(cffi:defcfun (test "op_test") error
+  (head :pointer)
+  (initial-data :pointer)
+  (initial-bytes :size))
+
+(cffi:defcfun (open-file "op_open_file") :pointer
+  (path :string)
+  (error :pointer))
+
+(cffi:defcfun (open-memory "op_open_memory") :pointer
+  (data :pointer)
+  (size :size)
+  (error :pointer))
+
+(cffi:defcfun (open-callbacks "op_open_callbacks") :pointer
+  (stream :pointer)
+  (callbacks :pointer)
+  (initial-data :pointer)
+  (initial-bytes :size)
+  (error :pointer))
+
+(cffi:defcfun (test-file "op_test_file") :pointer
+  (path :string)
+  (error :pointer))
+
+(cffi:defcfun (test-memory "op_test_memory") :pointer
+  (data :pointer)
+  (size :size)
+  (error :pointer))
+
+(cffi:defcfun (test-file "op_test_callbacks") :pointer
+  (stream :pointer)
+  (callbacks :pointer)
+  (initial-data :pointer)
+  (initial-bytes :size)
+  (error :pointer))
+
+(cffi:defcfun (test-open "op_test_open") error
+  (file :pointer))
+
+(cffi:defcfun (free "op_free") :void
+  (file :pointer))
+
+(cffi:defcfun (seekable-p "op_seekable") :bool
+  (file :pointer))
+
+(cffi:defcfun (serial-number "op_serialno") :uint32
+  (file :pointer)
+  (link-index :int))
+
+(cffi:defcfun (channel-count "op_channel_count") :int
+  (file :pointer)
+  (link-index :int))
+
+(cffi:defcfun (raw-total "op_raw_total") :int64
+  (file :pointer)
+  (link-index :int))
+
+(cffi:defcfun (pcm-total "op_pcm_total") :int64
+  (file :pointer)
+  (link-index :int))
+
+(cffi:defcfun (head "op_head") :pointer
+  (file :pointer)
+  (link-index :int))
+
+(cffi:defcfun (tags "op_tags") :pointer
+  (file :pointer)
+  (link-index :int))
+
+(cffi:defcfun (current-link "op_current_link") :int
+  (file :pointer))
+
+(cffi:defcfun (bitrate "op_bitrate") :int32
+  (file :pointer)
+  (link-index :int))
+
+(cffi:defcfun (bitrate_instant "op_bitrate_instant") :int32
+  (file :pointer))
+
+(cffi:defcfun (raw-tell "op_raw_tell") :int64
+  (file :pointer))
+
+(cffi:defcfun (pcm-tell "op_pcm_tell") :int64
+  (file :pointer))
+
+(cffi:defcfun (raw-seek "op_raw_seek") error
+  (file :pointer)
+  (byte-offset :int64))
+
+(cffi:defcfun (pcm-seek "op_pcm_seek") error
+  (file :pointer)
+  (pcm-offset :int64))
+
+(cffi:defcfun (set-decode-callback "op_set_decode_callback") :void
+  (file :pointer)
+  (function :pointer)
+  (user :pointer))
+
+(cffi:defcfun (set-gain-offset "op_set_gain_offset") error
+  (file :pointer)
+  (gain-type gain-type)
+  (offset-q8 :int32))
+
+(cffi:defcfun (set-dither-enabled "op_set_dither_enabled") error
+  (file :pointer)
+  (enabled :bool))
+
+(cffi:defcfun (read "op_read") error
+  (file :pointer)
+  (pcm :pointer)
+  (buffer-size :int)
+  (link-index :pointer))
+
+(cffi:defcfun (read "op_read_float") error
+  (file :pointer)
+  (pcm :pointer)
+  (buffer-size :int)
+  (link-index :pointer))
+
+(cffi:defcfun (read "op_read_stereo") error
+  (file :pointer)
+  (pcm :pointer)
+  (buffer-size :int))
+
+(cffi:defcfun (read "op_read_stereo_float") error
+  (file :pointer)
+  (pcm :pointer)
+  (buffer-size :int))
