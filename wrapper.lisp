@@ -67,6 +67,49 @@
   (close-fun (constantly -1) :type function)
   (user-data NIL :type T))
 
+(defmethod print-object ((file file) stream)
+  (print-unreadable-object (file stream :type T)
+    (if (cffi:null-pointer-p (handle file))
+        (format stream "CLOSED")
+        (let ((i (* (index file) (/ 48000.0)))
+              (l (* (max 0 (opus:pcm-total (handle file) -1)) (/ 48000.0))))
+          (if (< 0 l)
+              (format stream "~d:~2,'0d / ~d:~2,'0d (~d%)"
+                      (floor i 60) (floor (mod i 60))
+                      (floor l 60) (floor (mod i 60))
+                      (round (/ i l)))
+              (format stream "~d:~2,'0d"
+                      (floor i 60) (floor (mod i 60))))))))
+
+(defmethod describe-object ((file file) stream)
+  (let ((i (/ (opus:pcm-tell (handle file)) 48000.0))
+        (l (/ (opus:pcm-total (handle file) -1) 48000.0)))
+    (format stream "~a
+
+Position:~20t~:[Unknown~;~:*~{~d:~2,'0d~}~]
+Duration:~20t~:[Unknown~;~:*~{~d:~2,'0d~}~]
+Sample count:~20t~:[~a~;Unknown~]
+Samplerate:~20t~a
+Bitrate:~20t~a
+Channels:~20t~a
+Seekable:~20t~:[Yes~;No~]
+Link:~20t~{~d/~d~}
+Serial number:~20t~a
+Vendor:~20t~a
+Comments:~20t~{~a~^~%~20t~}"
+            file
+            (when (<= 0 i) (list (floor i 60) (floor (mod i 60))))
+            (when (<= 0 l) (list (floor l 60) (floor (mod l 60))))
+            (when (<= 0 l) (opus:pcm-total (handle file) -1))
+            (samplerate file)
+            (bitrate file)
+            (channels file)
+            (seekable-p file)
+            (list (current-link file) (link-count file))
+            (serial-number file)
+            (vendor file)
+            (comments file))))
+
 (defun make-file (handle error &rest args)
   (check-return NIL (cffi:mem-ref error 'opus:error))
   (apply #'%make-file handle args))
