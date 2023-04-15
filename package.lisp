@@ -15,6 +15,7 @@
    #:request-option
    #:format
    #:gain-type
+   #:whence
    #:head
    #:head-version
    #:head-channel-count
@@ -85,6 +86,7 @@
    #:open-file
    #:open-memory
    #:open-callbacks
+   #:open-stream
    #:test-file
    #:test-memory
    #:test-callbacks

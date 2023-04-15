@@ -57,41 +57,39 @@
 
 (defstruct (file
             (:conc-name NIL)
-            (:constructor %make-file (handle &key channels sample-count read-fun seek-fun index-fun close-fun))
+            (:constructor %make-file (handle &key read-fun seek-fun index-fun close-fun))
             (:copier NIL)
             (:predicate NIL))
   (handle NIL :type cffi:foreign-pointer)
-  (channels 0 :type (unsigned-byte 8) :read-only T)
-  (sample-count 0 :type (unsigned-byte 64) :read-only T)
   (read-fun (constantly -1) :type function)
   (seek-fun (constantly -1) :type function)
   (index-fun (constantly -1) :type function)
-  (close-fun (constantly -1) :type function))
+  (close-fun (constantly -1) :type function)
+  (user-data NIL :type T))
 
 (defun make-file (handle error &rest args)
   (check-return NIL (cffi:mem-ref error 'opus:error))
-  (let ((length (opus:pcm-total handle -1)))
-    (apply #'%make-file handle
-           :channels (opus:channel-count handle -1)
-           :sample-count (if (<= 0 length) length 0)
-           args)))
+  (apply #'%make-file handle args))
 
 (defun close (file)
   (opus:free (handle file))
   (setf (handle file) (cffi:null-pointer)))
 
 (defun open-file (path &key)
+  (init)
   (cffi:with-foreign-objects ((error 'opus:error))
     (setf (cffi:mem-ref error 'opus:error) :ok)
     (make-file (opus:open-file (namestring (truename path)) error) error)))
 
 (defun open-pointer (ptr &key (start 0) end)
+  (init)
   (cffi:incf-pointer ptr start)
   (cffi:with-foreign-objects ((error 'opus:error))
     (setf (cffi:mem-ref error 'opus:error) :ok)
     (make-file (opus:open-memory ptr (- end start) error) error)))
 
 (defun open-vector (vector &key (start 0) end)
+  (init)
   (cffi:with-foreign-objects ((error 'opus:error))
     (setf (cffi:mem-ref error 'opus:error) :ok)
     (make-file (opus:open-memory (static-vectors:static-vector-pointer vector :offset start) (- end start) error) error)))
@@ -105,36 +103,106 @@
          (let ((file (gethash file-idx *callbacks*)))
            (when file
              ,@body
-             (funcall (,name file) file ,@(mapcar #'first args))))
+             (funcall (,name file) (user-data file) ,@(mapcar #'first args))))
        (error () -1))))
 
 (define-callback read-fun :int ((buffer :pointer) (bytes :int)))
-(define-callback seek-fun :int ((offset :int64) (whence :int)))
+(define-callback seek-fun :int ((offset :int64) (whence opus:whence)))
 (define-callback index-fun :int64 ())
 (define-callback close-fun :int ()
   (remhash file-idx *callbacks*))
 
-(defun open-callback (read-fun &key seek-fun index-fun close-fun
+(defun open-callback (read-fun &key seek-fun index-fun close-fun user-data
                                     initial-data initial-data-start initial-data-end)
+  (init)
   (cffi:with-foreign-objects ((error 'opus:error)
                               (callbacks '(:struct opus:callbacks)))
     (setf (opus:callbacks-read callbacks) (cffi:callback read-fun))
     (setf (opus:callbacks-seek callbacks) (cffi:callback seek-fun))
     (setf (opus:callbacks-tell callbacks) (cffi:callback index-fun))
     (setf (opus:callbacks-close callbacks) (cffi:callback close-fun))
-    (let ((data (if initial-data
-                    (static-vectors:static-vector-pointer initial-data :offset (or initial-data-start 0))
-                    (cffi:null-pointer)))
-          (size (if initial-data (- (or initial-data-end (length initial-data)) (or initial-data-start 0)) 0))
-          (index (incf *callback-counter*)))
-      (make-file (opus:open-callbacks (cffi:make-pointer index) callbacks data size error)
-                 :read-fun read-fun
-                 :seek-fun (or seek-fun (constantly -1))
-                 :index-fun (or index-fun (constantly -1))
-                 :close-fun (or close-fun (constantly 0))))))
+    (let* ((data (etypecase initial-data
+                   (cffi:foreign-pointer
+                    initial-data)
+                   ((simple-array (unsigned-byte 8) (*))
+                    (static-vectors:static-vector-pointer initial-data :offset (or initial-data-start 0)))
+                   (null
+                    (cffi:null-pointer))))
+           (size (etypecase initial-data
+                   (cffi:foreign-pointer
+                    (- initial-data-end (or initial-data-start 0)))
+                   ((simple-array (unsigned-byte 8) (*))
+                    (- (or initial-data-end (length initial-data)) (or initial-data-start 0)))
+                   (null
+                    0)))
+           (index (incf *callback-counter*))
+           (file (make-file (opus:open-callbacks (cffi:make-pointer index) callbacks data size error)
+                            :read-fun read-fun
+                            :seek-fun (or seek-fun (constantly -1))
+                            :index-fun (or index-fun (constantly -1))
+                            :close-fun (or close-fun (constantly 0))
+                            :user-data user-data)))
+      (unless user-data
+        (setf (user-data file) file))
+      file)))
+
+(defstruct (stream-wrapper
+            (:constructor make-stream-wrapper (stream offset)))
+  (stream NIL :type stream)
+  (offset 0 :type (unsigned-byte 64)))
+
+(defun stream-read (wrapper out bytes)
+  (let* ((stream (stream-wrapper-stream wrapper))
+         (in (make-array 4096 :element-type '(unsigned-byte 8)))
+         (to-read bytes))
+    (declare (dynamic-extent in))
+    (with-pinned-buffer (ptr in)
+      (loop for read = (read-sequence in stream :end (min 4096 to-read))
+            while (< 0 read)
+            do (static-vectors:replace-foreign-memory out ptr read)
+               (cffi:incf-pointer out read)
+               (decf to-read read)))
+    (let ((read (- bytes to-read)))
+      (incf (stream-wrapper-offset wrapper) read)
+      read)))
+
+(defun stream-seek (wrapper offset whence)
+  (let* ((stream (stream-wrapper-stream wrapper))
+         (position (ecase whence
+                     (:start offset)
+                     (:cur (+ (file-position stream) offset))
+                     (:end (- (file-length stream) offset)))))
+    (cond ((file-position stream position)
+           (setf (stream-wrapper-offset wrapper) position)
+           1)
+          (T 0))))
+
+(defun stream-index (wrapper)
+  (stream-wrapper-offset wrapper))
+
+(defun stream-close (wrapper)
+  (close (stream-wrapper-stream wrapper))
+  1)
+
+(defun open-stream (stream &rest args &key initial-data initial-data-start initial-data-end)
+  (declare (ignorable initial-data initial-data-start initial-data-end))
+  (etypecase stream
+    (file-stream
+     (apply #'open-callback #'stream-read
+            :seek-fun #'stream-seek
+            :index-fun #'stream-index
+            :close-fun #'stream-close
+            :user-data (make-stream-wrapper stream (file-position stream))
+            :inital-data initial-data
+            args))
+    (stream
+     (apply #'open-callback #'stream-read
+            :index-fun #'stream-index
+            :close-fun #'stream-close
+            :user-data (make-stream-wrapper stream (- (or initial-data-end 0) (or initial-data-start 0)))
+            args))))
 
 (defun open (thing &rest initargs &key &allow-other-keys)
-  (init)
   (etypecase thing
     ((or string pathname)
      (apply #'open-file thing initargs))
@@ -143,7 +211,9 @@
     ((simple-array (unsigned-byte 8) (*))
      (apply #'open-vector thing initargs))
     (function
-     (apply #'open-callback thing initargs))))
+     (apply #'open-callback thing initargs))
+    (stream
+     (apply #'open-stream thing initargs))))
 
 (defmacro with-file ((file input &rest args) &body body)
   (let ((fileg (gensym "FILE")))
@@ -153,13 +223,23 @@
             (progn ,@body)
          (close ,fileg)))))
 
+(declaim (inline samplerate channels sample-count duration
+                 seekable-p link-count serial-number current-link
+                 bitrate instant-bitrate index (setf index) seek
+                 gain (setf gain)))
 (defun samplerate (file)
   (declare (ignore file))
   ;; libopusfile fixes the rate to 48kHz on output
   48000)
 
-(defun duration (file)
-  (/ (sample-count file) 48000.0))
+(defun channels (file &optional link)
+  (check-return file (opus:channel-count (handle file) (or link -1))))
+
+(defun sample-count (file &optional link)
+  (check-return file (opus:pcm-total (handle file) (or link -1))))
+
+(defun duration (file &optional link)
+  (/ (sample-count file link) 48000.0))
 
 (defun seekable-p (file)
   (opus:seekable-p (handle file)))

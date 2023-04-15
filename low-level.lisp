@@ -86,6 +86,11 @@
   (:track 3008)
   (:absolute 3009))
 
+(cffi:defcenum whence
+  (:start 0)
+  (:current 1)
+  (:end 2))
+
 (cffi:defcstruct (head :conc-name head-)
   (version :int)
   (channel-count :int)
