@@ -17,7 +17,8 @@
   (:unix (:or #+X86 "libopus-lin-i686.so"
               #+X86-64 "libopus-lin-amd64.so"))
   (:windows (:or #+X86 "libopus-win-i686.dll"
-                 #+X86-64 "libopus-win-amd64.dll")))
+                 #+X86-64 "libopus-win-amd64.dll"))
+  (T (:or (:default "libopusfile") (:default "opusfile"))))
 
 (cffi:defcenum (error :int :allow-undeclared-values T)
   (:ok 0)
