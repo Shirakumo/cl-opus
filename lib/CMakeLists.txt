@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(libopus)
+project(libopus C)
 
 set(OP_DISABLE_EXAMPLES ON)
 set(OP_DISABLE_DOCS ON)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g")
+
 if(LINUX)
   set(OS_SHORT lin)
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -include ${PROJECT_SOURCE_DIR}/glibc-2.13.h")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -include ${PROJECT_SOURCE_DIR}/glibc-2.13.h")
 elseif(APPLE)
   set(OS_SHORT mac)
 elseif(WIN32) 
