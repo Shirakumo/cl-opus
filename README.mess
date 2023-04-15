@@ -1,0 +1,25 @@
+# About cl-opus
+This library implements a wrapper library around opusfile to allow easy decoding of OGG/Opus sound files. Opus is a new codec providing better quality at lower decompression overhead and file size than other formats like Vorbis, AAC, or MP3.
+
+## How To
+In order to use cl-opus, we'll assume a local nickname for ``org.shirakumo.fraf.opus`` called ``opus``.
+
+:: common lisp
+(opus:with-file (file #p"file.opus")
+  (describe file))
+::
+
+Please see the ``file`` entry for a reference to all the information you can retrieve about a file. Please also see the reference entry to ``open`` for the kinds of data sources cl-opus can decode from.
+
+In order to decode samples, you can use ``decode-float`` or ``decode-int16``.
+
+:: common lisp
+(opus:with-file (file #p"file.opus")
+  (let ((samples (make-array (* 2 4096) :element-type 'single-float)))
+    (opus:decode-float file samples :stereo T)))
+::
+
+You might also directly use the low-level functions in the ``org.shirakumo.fraf.opus.cffi`` package, using the ``handle`` of the file for its pointer representation.
+
+## Foreign Library
+This library ships the required C library by default for the most common operating systems to make it easy to deploy. If you would like to compile the library yourself, please see the readme in the ``lib/`` directory.
