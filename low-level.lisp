@@ -19,7 +19,7 @@
   (:windows (:or #+X86 "libopus-win-i686.dll"
                  #+X86-64 "libopus-win-amd64.dll")))
 
-(cffi:defcenum error
+(cffi:defcenum (error :int :allow-undeclared-values T)
   (:ok 0)
   (:false -1)
   (:end-of-file -2)
@@ -89,13 +89,13 @@
 (cffi:defcstruct (head :conc-name head-)
   (version :int)
   (channel-count :int)
-  (pre-skip :unsigned)
+  (pre-skip :uint)
   (input-sample-rate :uint32)
   (output-gain :int)
   (mapping-family :int)
   (stream-count :int)
   (coupled-count :int)
-  (mapping :unsigned-char :count 255))
+  (mapping :uchar :count 255))
 
 (cffi:defcstruct (tags :conc-name tags-)
   (user-comments :pointer)
@@ -112,7 +112,7 @@
   (depth :uint32)
   (colors :uint32)
   (data-length :uint32)
-  (data :poitner)
+  (data :pointer)
   (format :int))
 
 (cffi:defcstruct (server-info :conc-name server-info-)
@@ -126,7 +126,7 @@
   (public-p :int)
   (ssl-p :int))
 
-(cffi:defcstruct (file-callbacks :conc-name file-callbacks-)
+(cffi:defcstruct (callbacks :conc-name callbacks-)
   (read :pointer)
   (seek :pointer)
   (tell :pointer)
@@ -267,7 +267,7 @@
   (size :size)
   (error :pointer))
 
-(cffi:defcfun (test-file "op_test_callbacks") :pointer
+(cffi:defcfun (test-callbacks "op_test_callbacks") :pointer
   (stream :pointer)
   (callbacks :pointer)
   (initial-data :pointer)
@@ -281,6 +281,9 @@
   (file :pointer))
 
 (cffi:defcfun (seekable-p "op_seekable") :bool
+  (file :pointer))
+
+(cffi:defcfun (link-count "op_link_count") :int
   (file :pointer))
 
 (cffi:defcfun (serial-number "op_serialno") :uint32
@@ -314,7 +317,7 @@
   (file :pointer)
   (link-index :int))
 
-(cffi:defcfun (bitrate_instant "op_bitrate_instant") :int32
+(cffi:defcfun (bitrate-instant "op_bitrate_instant") :int32
   (file :pointer))
 
 (cffi:defcfun (raw-tell "op_raw_tell") :int64
@@ -351,18 +354,18 @@
   (buffer-size :int)
   (link-index :pointer))
 
-(cffi:defcfun (read "op_read_float") error
+(cffi:defcfun (read-float "op_read_float") error
   (file :pointer)
   (pcm :pointer)
   (buffer-size :int)
   (link-index :pointer))
 
-(cffi:defcfun (read "op_read_stereo") error
+(cffi:defcfun (read-stereo "op_read_stereo") error
   (file :pointer)
   (pcm :pointer)
   (buffer-size :int))
 
-(cffi:defcfun (read "op_read_stereo_float") error
+(cffi:defcfun (read-stereo-float "op_read_stereo_float") error
   (file :pointer)
   (pcm :pointer)
   (buffer-size :int))
