@@ -25,6 +25,9 @@ else()
   set(ARCH_SHORT ${CMAKE_SYSTEM_PROCESSOR})
 endif()
 
+string(TOLOWER ${ARCH_SHORT} ARCH_SHORT)
+string(TOLOWER ${OS_SHORT} OS_SHORT)
+
 add_subdirectory(ogg EXCLUDE_FROM_ALL)
 add_subdirectory(opus EXCLUDE_FROM_ALL)
 add_subdirectory(opusfile EXCLUDE_FROM_ALL)
