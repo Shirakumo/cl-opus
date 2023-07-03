@@ -1,14 +1,8 @@
-#|
- This file is a part of cl-opus
- (c) 2023 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (asdf:defsystem cl-opus
   :version "1.0.0"
   :license "zlib"
-  :author "Nicolas Hafner <shinmera@tymoon.eu>"
-  :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
+  :author "Yukari Hafner <shinmera@tymoon.eu>"
+  :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :description "Bindings to libopusfile, a simple and free OGG/Opus decoding library"
   :homepage "https://Shirakumo.github.io/cl-opus/"
   :bug-tracker "https://github.com/Shirakumo/cl-opus/issues"
