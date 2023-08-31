@@ -38,6 +38,11 @@ set_property(TARGET opusfile PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library(miniopus SHARED $<TARGET_OBJECTS:ogg> $<TARGET_OBJECTS:opus> $<TARGET_OBJECTS:opusfile>)
 set_target_properties(miniopus PROPERTIES OUTPUT_NAME opus-${OS_SHORT}-${ARCH_SHORT})
-target_link_libraries(miniopus m)
+
+find_library(HAVE_LIBM m)
+if(HAVE_LIBM)
+  target_link_libraries(miniopus m)
+endif()
+
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/../)
 install(TARGETS miniopus DESTINATION static)
