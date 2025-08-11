@@ -4,9 +4,9 @@
   :author "Yukari Hafner <shinmera@tymoon.eu>"
   :maintainer "Yukari Hafner <shinmera@tymoon.eu>"
   :description "Bindings to libopusfile, a simple and free OGG/Opus decoding library"
-  :homepage "https://Shirakumo.github.io/cl-opus/"
-  :bug-tracker "https://github.com/Shirakumo/cl-opus/issues"
-  :source-control (:git "https://github.com/Shirakumo/cl-opus.git")
+  :homepage "https://shirakumo.org/docs/cl-opus/"
+  :bug-tracker "https://shirakumo.org/project/cl-opus/issues"
+  :source-control (:git "https://shirakumo.org/project/cl-opus.git")
   :serial T
   :components ((:file "package")
                (:file "low-level")
