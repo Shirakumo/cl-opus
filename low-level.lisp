@@ -349,24 +349,25 @@
   (file :pointer)
   (enabled :bool))
 
-(cffi:defcfun (read "op_read") error
+(cffi:defcfun (read "op_read") :int
   (file :pointer)
   (pcm :pointer)
   (buffer-size :int)
   (link-index :pointer))
 
-(cffi:defcfun (read-float "op_read_float") error
+(cffi:defcfun (read-float "op_read_float") :int
   (file :pointer)
   (pcm :pointer)
   (buffer-size :int)
   (link-index :pointer))
 
-(cffi:defcfun (read-stereo "op_read_stereo") error
+(cffi:defcfun (read-stereo "op_read_stereo") :int
   (file :pointer)
   (pcm :pointer)
   (buffer-size :int))
 
-(cffi:defcfun (read-stereo-float "op_read_stereo_float") error
+(cffi:defcfun (read-stereo-float "op_read_stereo_float") :int
   (file :pointer)
   (pcm :pointer)
   (buffer-size :int))
+
